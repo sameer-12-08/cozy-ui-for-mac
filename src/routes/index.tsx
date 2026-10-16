@@ -65,7 +65,7 @@ function App() {
   const [hoverTheme, setHoverTheme] = useState<number | null>(null);
   const [view, setView] = useState<View>("Songs");
   const [q, setQ] = useState("");
-  const [cur, setCur] = useState<Song>(SONGS[3]);
+  const [cur, setCur] = useState<Song>(SONGS[3]!);
   const [playing, setPlaying] = useState(false);
   const [pos, setPos] = useState(64);
   const [vol, setVol] = useState(70);
@@ -79,7 +79,7 @@ function App() {
   useEffect(() => { const t = localStorage.getItem("qm-theme"); if (t) setTheme(+t); }, []);
   useEffect(() => { localStorage.setItem("qm-theme", String(theme)); }, [theme]);
 
-  const t = THEMES[hoverTheme ?? theme];
+  const t = THEMES[hoverTheme ?? theme]!;
   const vars = { "--bg": t.bg, "--main": t.main, "--caption": t.caption, "--text": t.text, "--sub": t.sub, "--subalt": t.subalt, "--error": t.error } as React.CSSProperties;
 
   useEffect(() => {
@@ -90,7 +90,7 @@ function App() {
 
   const play = (s: Song) => { setCur(s); setPos(0); setPlaying(true); };
   const next = () => { if (queue[0]) { play(queue[0]); setQueue(queue.slice(1)); } };
-  const prev = () => { const i = SONGS.findIndex((s) => s.id === cur.id); play(SONGS[(i - 1 + SONGS.length) % SONGS.length]); };
+  const prev = () => { const i = SONGS.findIndex((s) => s.id === cur.id); play(SONGS[(i - 1 + SONGS.length) % SONGS.length]!); };
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(""), 1400); };
 
   useEffect(() => {
@@ -167,10 +167,10 @@ function App() {
       return (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-5">
           {groups("album").map(([a, ss]) => (
-            <button key={a} onClick={() => { play(ss[0]); setQueue(ss.slice(1)); flash(`Playing album ${a}`); }} className="text-left">
+            <button key={a} onClick={() => { play(ss[0]!); setQueue(ss.slice(1)); flash(`Playing album ${a}`); }} className="text-left">
               <Art album={a} size={150} />
               <div className="mt-2 truncate text-sm">{a}</div>
-              <div className="truncate text-xs text-sub">{ss[0].artist} · {ss.length} songs</div>
+              <div className="truncate text-xs text-sub">{ss[0]?.artist} · {ss.length} songs</div>
             </button>
           ))}
         </div>
@@ -234,7 +234,7 @@ function App() {
           ))}
           <div className="mt-auto space-y-1">
             <button onClick={() => flash("Open panel: choose files or folder…")} className="w-full rounded-md px-2 py-1 text-left text-sm text-sub hover:text-foreground">＋ Add Songs / Folder</button>
-            <button onClick={() => setThemeOpen(!themeOpen)} className="w-full rounded-md px-2 py-1 text-left text-sm text-sub hover:text-foreground">◐ Theme: {THEMES[theme].name}</button>
+            <button onClick={() => setThemeOpen(!themeOpen)} className="w-full rounded-md px-2 py-1 text-left text-sm text-sub hover:text-foreground">◐ Theme: {THEMES[theme]?.name}</button>
           </div>
         </aside>
 
