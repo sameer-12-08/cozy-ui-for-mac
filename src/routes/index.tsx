@@ -283,7 +283,7 @@ function App() {
                 <Art album={s.album} size={28} />
                 <div className="min-w-0 flex-1"><div className="truncate">{s.title}</div><div className="truncate text-sub">{s.album}</div></div>
                 <span className="hidden gap-1 group-hover:flex">
-                  <button disabled={i === 0} onClick={() => { const n = [...queue]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setQueue(n); }} className="text-sub hover:text-main">↑</button>
+                  <button disabled={i === 0} onClick={() => { const n = [...queue]; const a = n[i - 1]!; n[i - 1] = n[i]!; n[i] = a; setQueue(n); }} className="text-sub hover:text-main">↑</button>
                   <button onClick={() => setQueue(queue.filter((_, j) => j !== i))} className="text-sub hover:text-error">✕</button>
                 </span>
               </div>
