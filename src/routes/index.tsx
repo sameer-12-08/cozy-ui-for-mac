@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SkipBack, SkipForward, Play, Pause, Music, Disc3, Mic2, Folder, Flame, Search, ListMusic, Plus, Palette, Volume2, CornerDownRight, X, ArrowUp, Minimize2, Maximize2 } from "lucide-react";
+
+const VIEW_ICONS = { Songs: Music, Albums: Disc3, Artists: Mic2, Folders: Folder, "Most Played": Flame } as const;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -119,13 +122,13 @@ function App() {
   };
 
   const Controls = ({ big = false }: { big?: boolean }) => (
-    <div className={`flex items-center ${big ? "gap-10 text-3xl" : "gap-5 text-lg"}`}>
-      <button onClick={prev} className="text-sub hover:text-foreground" title="Previous (F7)">⏮</button>
+    <div className={`flex items-center ${big ? "gap-10" : "gap-5"}`}>
+      <button onClick={prev} className="text-sub transition hover:scale-110 hover:text-foreground" title="Previous (F7)"><SkipBack size={big ? 32 : 18} fill="currentColor" /></button>
       <button onClick={() => setPlaying(!playing)} title="Play/Pause (F8)"
-        className={`grid place-items-center rounded-full bg-main text-background ${big ? "h-16 w-16" : "h-9 w-9"}`}>
-        {playing ? "❚❚" : "▶"}
+        className={`grid place-items-center rounded-full bg-main text-background shadow-lg transition hover:scale-105 active:scale-95 ${big ? "h-16 w-16" : "h-9 w-9"}`}>
+        {playing ? <Pause size={big ? 28 : 16} fill="currentColor" /> : <Play size={big ? 28 : 16} fill="currentColor" className="ml-0.5" />}
       </button>
-      <button onClick={next} className="text-sub hover:text-foreground" title="Next (F9)">⏭</button>
+      <button onClick={next} className="text-sub transition hover:scale-110 hover:text-foreground" title="Next (F9)"><SkipForward size={big ? 32 : 18} fill="currentColor" /></button>
     </div>
   );
   const Seek = () => (
@@ -147,14 +150,18 @@ function App() {
     const active = s.id === cur.id;
     return (
       <div onDoubleClick={() => play(s)}
-        className={`group grid grid-cols-[2rem_1fr_1fr_6rem_4rem_3rem] items-center gap-3 rounded-md px-3 py-1.5 text-sm ${active ? "bg-main/15 text-main" : "hover:bg-subalt"}`}>
-        <span className="font-mono text-xs text-sub">{active && playing ? "♪" : i + 1}</span>
-        <span className="truncate">{s.title}</span>
-        <span className="truncate text-sub">{s.artist}</span>
-        <span className="font-mono text-[10px] text-sub">{view === "Most Played" ? `${s.plays} plays` : s.fmt}</span>
-        <span className="flex gap-2 opacity-0 group-hover:opacity-100">
-          <button title="Play next" onClick={() => { setQueue([s, ...queue]); flash(`Playing next: ${s.title}`); }} className="text-sub hover:text-main">↱</button>
-          <button title="Add to queue" onClick={() => { setQueue([...queue, s]); flash(`Queued: ${s.title}`); }} className="text-sub hover:text-main">＋</button>
+        className={`group grid grid-cols-[2rem_2.25rem_1fr_auto_3rem] items-center gap-3 rounded-lg px-3 py-2 text-sm transition md:grid-cols-[2rem_2.25rem_1.4fr_1fr_6rem_auto_3rem] ${active ? "bg-main/15 text-main" : "hover:bg-subalt"}`}>
+        <button onClick={() => play(s)} className="font-mono text-xs text-sub">
+          <span className="group-hover:hidden">{active && playing ? "♪" : i + 1}</span>
+          <Play size={12} fill="currentColor" className="hidden text-foreground group-hover:inline" />
+        </button>
+        <Art album={s.album} size={36} />
+        <div className="min-w-0"><div className="truncate font-medium">{s.title}</div><div className="truncate text-xs text-sub md:hidden">{s.artist}</div></div>
+        <span className="hidden truncate text-sub md:block">{s.artist}</span>
+        <span className="hidden w-fit rounded border px-1.5 py-0.5 font-mono text-[10px] text-sub md:block">{view === "Most Played" ? `${s.plays} plays` : s.fmt}</span>
+        <span className="flex gap-2 opacity-0 transition group-hover:opacity-100">
+          <button title="Play next" onClick={() => { setQueue([s, ...queue]); flash(`Playing next: ${s.title}`); }} className="text-sub hover:text-main"><CornerDownRight size={14} /></button>
+          <button title="Add to queue" onClick={() => { setQueue([...queue, s]); flash(`Queued: ${s.title}`); }} className="text-sub hover:text-main"><Plus size={14} /></button>
         </span>
         <span className="text-right font-mono text-xs text-sub">{fmt(s.dur)}</span>
       </div>
@@ -216,33 +223,52 @@ function App() {
       </div>
     );
 
+  const totalMin = Math.round(filtered.reduce((a, s) => a + s.dur, 0) / 60);
   return (
-    <div style={vars} className="flex min-h-screen items-center justify-center p-8">
-      <div className="window-shadow flex h-[760px] w-full max-w-[1200px] overflow-hidden rounded-xl bg-background">
+    <div style={vars} className="flex min-h-screen items-center justify-center p-2 sm:p-8">
+      <div className="window-shadow flex h-[min(760px,calc(100vh-2rem))] w-full max-w-[1200px] overflow-hidden rounded-xl bg-background">
         {/* Sidebar */}
-        <aside className="glass flex w-56 flex-col border-r p-3">
+        <aside className="glass hidden w-56 shrink-0 flex-col border-r p-3 sm:flex">
           <Lights onGreen={() => setMode("full")} />
           <div className="relative mt-5">
+            <Search size={14} className="absolute left-2.5 top-2 text-sub" />
             <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search"
-              className="w-full rounded-md bg-background/60 px-3 py-1.5 text-sm outline-none placeholder:text-sub focus:ring-2 focus:ring-main" />
+              className="w-full rounded-md bg-background/60 py-1.5 pl-8 pr-7 text-sm outline-none placeholder:text-sub focus:ring-2 focus:ring-main" />
             <kbd className="absolute right-2 top-1.5 rounded border px-1 font-mono text-[10px] text-sub">/</kbd>
           </div>
-          <div className="mt-5 px-2 text-[11px] font-semibold text-sub">Library</div>
-          {(["Songs", "Albums", "Artists", "Folders", "Most Played"] as View[]).map((v) => (
-            <button key={v} onClick={() => setView(v)}
-              className={`mt-0.5 rounded-md px-2 py-1 text-left text-sm ${view === v ? "bg-main/20 text-main" : "hover:bg-background/40"}`}>{v}</button>
-          ))}
+          <div className="mt-5 px-2 text-[11px] font-semibold uppercase tracking-wider text-sub">Library</div>
+          {(["Songs", "Albums", "Artists", "Folders", "Most Played"] as View[]).map((v) => {
+            const I = VIEW_ICONS[v];
+            return (
+              <button key={v} onClick={() => setView(v)}
+                className={`mt-0.5 flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm transition ${view === v ? "bg-main/20 text-main" : "hover:bg-background/40"}`}>
+                <I size={15} className={view === v ? "text-main" : "text-sub"} />{v}
+              </button>
+            );
+          })}
           <div className="mt-auto space-y-1">
-            <button onClick={() => flash("Open panel: choose files or folder…")} className="w-full rounded-md px-2 py-1 text-left text-sm text-sub hover:text-foreground">＋ Add Songs / Folder</button>
-            <button onClick={() => setThemeOpen(!themeOpen)} className="w-full rounded-md px-2 py-1 text-left text-sm text-sub hover:text-foreground">◐ Theme: {THEMES[theme]?.name}</button>
+            <button onClick={() => flash("Open panel: choose files or folder…")} className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm text-sub hover:text-foreground"><Plus size={15} />Add Songs / Folder</button>
+            <button onClick={() => setThemeOpen(!themeOpen)} className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-sm text-sub hover:text-foreground"><Palette size={15} />{THEMES[theme]?.name}</button>
           </div>
         </aside>
 
         {/* Main */}
         <main className="relative flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center justify-between border-b px-6 py-3">
-            <h1 className="text-xl font-bold text-caption">{view}</h1>
-            <button onClick={() => setShowQueue(!showQueue)} className={`text-sm ${showQueue ? "text-main" : "text-sub"}`}>☰ Queue</button>
+          <header className="relative overflow-hidden border-b px-6 py-5"
+            style={{ background: `linear-gradient(120deg, color-mix(in oklab, var(--main) 18%, transparent), transparent 70%)` }}>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-widest text-sub">Library</div>
+                <h1 className="mt-1 text-3xl font-bold tracking-tight text-caption">{view}</h1>
+                <div className="mt-1 font-mono text-xs text-sub">{filtered.length} songs · {totalMin} min · lossless</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { if (filtered[0]) { play(filtered[0]); setQueue(filtered.slice(1)); } }}
+                  className="flex items-center gap-1.5 rounded-full bg-main px-4 py-1.5 text-sm font-medium text-background transition hover:scale-105"><Play size={14} fill="currentColor" />Play</button>
+                <button onClick={() => setShowQueue(!showQueue)} title="Queue"
+                  className={`grid h-8 w-8 place-items-center rounded-full border transition ${showQueue ? "bg-main/20 text-main" : "text-sub hover:text-foreground"}`}><ListMusic size={15} /></button>
+              </div>
+            </div>
           </header>
           <div className="flex-1 overflow-auto px-4 py-3"
             onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); flash("Dropped files added to library"); }}>
@@ -251,11 +277,13 @@ function App() {
           </div>
 
           {/* Player bar */}
-          <footer className="glass flex items-center gap-6 border-t px-5 py-3">
-            <div className="flex w-64 items-center gap-3"><Art album={cur.album} size={44} />
-              <div className="min-w-0"><div className="truncate text-sm">{cur.title}</div><div className="truncate text-xs text-sub">{cur.artist}</div></div></div>
+          <footer className="glass flex items-center gap-4 border-t px-4 py-3 md:gap-6 md:px-5">
+            <div className="flex w-44 min-w-0 items-center gap-3 md:w-64"><Art album={cur.album} size={44} />
+              <div className="min-w-0"><div className="truncate text-sm font-medium">{cur.title}</div><div className="truncate text-xs text-sub">{cur.artist}</div></div></div>
             <div className="flex flex-1 flex-col items-center gap-1"><Controls /><Seek /></div>
-            <div className="flex w-40 items-center gap-2 text-sub">🔈<input type="range" value={vol} onChange={(e) => setVol(+e.target.value)} className="flex-1 accent-[var(--main)]" /></div>
+            <div className="hidden w-36 items-center gap-2 text-sub lg:flex"><Volume2 size={15} /><input type="range" value={vol} onChange={(e) => setVol(+e.target.value)} className="flex-1 accent-[var(--main)]" /></div>
+            <button onClick={() => setMode("mini")} title="Mini player" className="text-sub hover:text-foreground"><Minimize2 size={15} /></button>
+            <button onClick={() => setMode("full")} title="Full screen" className="text-sub hover:text-foreground"><Maximize2 size={15} /></button>
           </footer>
 
           {themeOpen && (
@@ -274,17 +302,17 @@ function App() {
         </main>
 
         {showQueue && (
-          <aside className="glass w-64 border-l p-3">
-            <div className="mb-2 text-[11px] font-semibold text-sub">Now Playing</div>
+          <aside className="glass hidden w-64 shrink-0 overflow-auto border-l p-3 lg:block">
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-sub">Now Playing</div>
             <div className="flex items-center gap-2 rounded-md bg-main/15 p-2"><Art album={cur.album} size={32} /><div className="min-w-0 text-xs"><div className="truncate text-main">{cur.title}</div><div className="truncate text-sub">{cur.artist}</div></div></div>
-            <div className="mb-2 mt-4 text-[11px] font-semibold text-sub">Up Next · {queue.length}</div>
+            <div className="mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wider text-sub">Up Next · {queue.length}</div>
             {queue.map((s, i) => (
               <div key={i} className="group flex items-center gap-2 rounded-md p-1.5 text-xs hover:bg-background/40">
                 <Art album={s.album} size={28} />
                 <div className="min-w-0 flex-1"><div className="truncate">{s.title}</div><div className="truncate text-sub">{s.album}</div></div>
                 <span className="hidden gap-1 group-hover:flex">
-                  <button disabled={i === 0} onClick={() => { const n = [...queue]; const a = n[i - 1]!; n[i - 1] = n[i]!; n[i] = a; setQueue(n); }} className="text-sub hover:text-main">↑</button>
-                  <button onClick={() => setQueue(queue.filter((_, j) => j !== i))} className="text-sub hover:text-error">✕</button>
+                  <button disabled={i === 0} onClick={() => { const n = [...queue]; const a = n[i - 1]!; n[i - 1] = n[i]!; n[i] = a; setQueue(n); }} className="text-sub hover:text-main"><ArrowUp size={12} /></button>
+                  <button onClick={() => setQueue(queue.filter((_, j) => j !== i))} className="text-sub hover:text-error"><X size={12} /></button>
                 </span>
               </div>
             ))}
